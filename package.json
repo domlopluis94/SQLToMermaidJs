@@ -1,0 +1,26 @@
+{
+  "name": "sqltomermaidjs",
+  "version": "1.0.0",
+  "description": "SQL to Mermaid JS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domlopluis94/SQLToMermaidJs.git"
+  },
+  "keywords": [
+    "SQL",
+    "Mermaid"
+  ],
+  "author": "Luis Domínguez López",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/domlopluis94/SQLToMermaidJs/issues"
+  },
+  "homepage": "https://github.com/domlopluis94/SQLToMermaidJs#readme",
+  "dependencies": {
+    "chalk": "2.4"
+  }
+}
