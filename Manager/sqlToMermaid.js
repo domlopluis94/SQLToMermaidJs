@@ -35,8 +35,8 @@ module.exports = class SqlToMermaid {
         }
 
         //out
-        if (this.args["out"] != undefined && typeof(this.args["out"]) == String && this.args["out"].split(".")[1] == "md") {
-            this.job["mdName"] = this.args["out"];
+        if (this.args["output"] != undefined && typeof(this.args["output"]) == String && this.args["output"].split(".")[1] == "md") {
+            this.job["mdName"] = this.args["output"];
         } else {
             this.job["mdName"] = "output_readme.md";
         }
@@ -50,6 +50,13 @@ module.exports = class SqlToMermaid {
                 this.job["mode"] = "classDiagram";
         }
 
+        switch (this.args["mermaidmd"]) {
+            case "points":
+                this.job["mermaidmd"] = "points"
+            case "quotes":
+            default:
+                this.job["mermaidmd"] = "quotes";
+        }
     }
 
     readFile(fileName) {
@@ -91,11 +98,15 @@ module.exports = class SqlToMermaid {
         const regex = new RegExp(`CREATE TABLE ${className} \\(([^;]*)\\)`, 'gm');
         let classsql = this.job["sql"].match(regex);
         const regex2 = /\(([^;]*)\)/gm;
-        const regex3 = /\w+ \w+[^,(]/gm;
+        const regex3 = /([^,]+)/g;
         let classsqlprop = classsql[0].match(regex2)[0].match(regex3);
         let sqlClass = {};
         classsqlprop.forEach(element => {
-            sqlClass[element.split(" ")[0]] = element.split(" ")[1];
+            element = element.replace(/\n/g, ' ').replace(/\(/g, '').replace(/\)/g, '').replace(/ +(?= )/g, '').replace(/^\s+/g, '');
+            if (!element.includes("PRIMARY KEY")) {
+                sqlClass[element.split(" ")[0]] = element.split(element.split(" ")[0])[1].replace(/^\s+/g, '').split(" ")[0];
+            }
+
         });
         return sqlClass;
     }
@@ -112,7 +123,9 @@ module.exports = class SqlToMermaid {
         for (const key in $this.sql) {
             if (key != className) {
                 for (const propertie in $this.sql[key]) {
-                    if (className == propertie || `id${className.toLowerCase()}` == propertie.toLowerCase() || `${className.toLowerCase()}id` == propertie.toLowerCase()) {
+                    if (className == propertie || `id${className.toLowerCase()}` == propertie.toLowerCase() || `${className.toLowerCase()}id` == propertie.toLowerCase() ||
+                        `id${className.toLowerCase().substring(0, className.toLowerCase().length - 1)}` == propertie.toLowerCase() ||
+                        `${className.toLowerCase().substring(0, className.toLowerCase().length - 1)}id` == propertie.toLowerCase()) {
                         relateds[key] = propertie;
                     }
                 }
@@ -149,8 +162,36 @@ module.exports = class SqlToMermaid {
     classIndividualDiagram($this) {
         for (const key in $this.sql) {
             $this.mermaid[key] = "classDiagram \n"
-            $this.mermaid[key] += $this.objectToClassDiagram(key, $this.sql[key]);
+            $this.mermaid[key] += $this.objectToClassDiagramWithRelateds(key, $this.sql[key]);
         }
+    }
+
+    objectToClassDiagramWithRelateds(className, properties) {
+        let mermaid = "";
+        if (properties.Relateds != {}) {
+            for (const key in properties.Relateds) {
+                mermaid += `${className} <|-- ${key} : ${properties.Relateds[key]} \n`;
+                for (const prop in this.sql[key]) {
+                    if (prop != "Relateds") {
+                        mermaid += `${key} : ${this.sql[key][prop]} ${prop}  \n`;
+                    }
+                }
+            }
+        } else {
+            mermaid += `class ${className} \n`;
+        }
+
+        if (mermaid == "") {
+            mermaid += `class ${className} \n`;
+        }
+
+        for (const key in properties) {
+            if (key != "Relateds") {
+                mermaid += `${className} : ${properties[key]} ${key}  \n`;
+            }
+        }
+
+        return mermaid;
     }
 
     objectToClassDiagram(className, properties) {
@@ -179,9 +220,10 @@ module.exports = class SqlToMermaid {
     writeMermaid() {
         let md = "# SQL TO MERMAID \n";
         for (const key in this.mermaid) {
-            md += "## " + key + " \n ```mermaid \n";
+            md += "## " + key + " \n";
+            md += (this.args["mermaidmd"] == "quotes") ? "```mermaid \n" : ":::mermaid \n";
             md += this.mermaid[key];
-            md += "``` \n";
+            md += (this.args["mermaidmd"] == "quotes") ? "``` \n" : "::: \n";
         }
         FS.writeFileSync(`./${this.job.mdName}`, md);
     }

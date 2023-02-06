@@ -8,13 +8,14 @@ module.exports = class ResponseManager {
     }
 
     static HelpCommand() {
-        console.log(chalk.default.green(`Usage: --input=<filename>.sql --out=<filename>.md --mode=classDiagram
+        console.log(chalk.default.green(`Usage: --input=<filename>.sql --out=<filename>.md --mode=classDiagram --mermaidmd=quotes
 
             Options:
             --help      Show help                                                [boolean]
             --input     SQL File name                                            [String] [required]
             --out       Out Put file name                                        [string]
             --mode      Mermaid Mode                                             [classDiagram|stateDiagram]
+            --mermaidmd MD Mermaid quotes                                        [quotes|points]
         `));
     }
 
